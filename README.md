@@ -13,8 +13,6 @@ değerlendirme yapay zekâ tarafından kaynaklara dayanarak yapılır ve son kar
 - SQLite FTS5 ile API anahtarı gerektirmeyen yerel arama
 - İsteğe bağlı semantik arama
 - `skills/review-dental-content` altında Claude Code/Codex uyumlu inceleme skill'i
-- Claude Code ve Codex için proje kapsamlı, salt-okunur MCP ayarları
-- Claude, Codex, Cursor ve Copilot gibi ajanlar için ortak proje talimatları ve bağlamı
 - Kaynak güncelleme ve yeni kaynak ekleme araçları
 
 Hazır indeks 14 Temmuz 2026 tarihli bir kaynak anlık görüntüsüdür. Güncel ve bağlayıcı
@@ -29,7 +27,7 @@ git clone https://github.com/yigitcanural/dis-mevzuat.git
 cd dis-mevzuat
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e .
+pip install -e .
 dis-mevzuat status
 ```
 
@@ -51,31 +49,10 @@ DM_TRANSPORT=http DM_HOST=127.0.0.1 DM_PORT=8000 dis-mevzuat serve
 
 HTTP adresi: `http://127.0.0.1:8000/mcp`
 
-## Repoyu bir yapay zekâ projesi olarak açma
+## Claude Code projesine bağlama
 
-Kurulumdan sonra repo kökünü Claude Code, Codex, Cursor veya Copilot ile açabilirsiniz.
-Gerekli proje bağlamı ve güvenli varsayılanlar Git ile birlikte gelir:
-
-- `AGENTS.md`: bütün ajanlar için kanonik çalışma kuralları
-- `CLAUDE.md`: aynı kuralları Claude Code'a yükleyen uyumluluk köprüsü
-- `docs/PROJECT_CONTEXT.md`: konuşmalardan bağımsız, sürümlenen ortak proje hafızası
-- `.mcp.json`: Claude Code'un yerel stdio MCP ayarı
-- `.codex/config.toml`: Codex'in yerel stdio MCP ayarı
-- `.claude/skills/` ve `.agents/skills/`: kanonik skill'e yönlendiren keşif katmanları
-
-İlk açılışta istemci proje MCP ayarına güvenip güvenmediğinizi sorabilir. Dosyayı kontrol
-ettikten sonra onaylayın. Her iki hazır ayar da yalnız salt-okunur araçları kullanır ve
-`DM_ENABLE_ADMIN_TOOLS=false` ile çalışır. Önce `.venv` kurulmuş olmalıdır.
-
-Claude Code'da `/mcp`, Codex'te `/mcp` komutuyla bağlantı durumunu görebilirsiniz. Bir
-içerik incelemesi istediğinizde repo içindeki skill otomatik keşfedilir. Uygulamaların kendi
-sohbet geçmişi veya otomatik hafızası yardımcı olabilir; fakat proje için kalıcı doğruluk
-kaynağı Git'teki talimatlar ve `docs/PROJECT_CONTEXT.md` dosyasıdır.
-
-## Başka bir Claude Code projesine bağlama
-
-Diş Mevzuat'ı farklı bir Claude Code projesinde kullanacaksanız hedef projenin kökünde
-`.mcp.json` oluşturun. Yolları kendi bilgisayarınıza göre mutlak yol olarak değiştirin:
+Claude Code projesinin kökünde `.mcp.json` oluşturun. Yolları kendi bilgisayarınıza göre
+mutlak yol olarak değiştirin:
 
 ```json
 {
@@ -157,9 +134,8 @@ DM_EMBEDDING_API_BASE=https://openrouter.ai/api/v1
 DM_EMBEDDING_MODEL=openai/text-embedding-3-small
 ```
 
-Embedding kullanıldığında indeksleme sırasında kaynak parçaları, arama sırasında ise sorgular
-seçilen dış sağlayıcıya aktarılır. Hasta veya klinik verisi bu mevzuat indeksine, sorgulara ya
-da embedding hizmetine gönderilmemelidir.
+Embedding kullanıldığında sorgular seçilen dış sağlayıcıya aktarılır. Hasta veya klinik verisi
+bu mevzuat indeksine ya da embedding hizmetine gönderilmemelidir.
 
 ## Docker (isteğe bağlı)
 
@@ -174,8 +150,7 @@ kimlik doğrulama, hız sınırlama ve operasyonel güvenlik gerekir.
 
 ## Güvenlik ve veri sınırı
 
-- Hazır indeks kamuya açık hukuk ve mesleki kaynaklardan oluşur; kamuya açık bir belgenin
-  kişisel veri içermeyeceği varsayılmamalıdır.
+- Hazır indeks yalnız kamuya açık hukuk ve mesleki kaynakları içerir.
 - Hasta fotoğrafı, hasta kaydı veya klinik iç verisi bu indekse eklenmemelidir.
 - Kaynak ekleme araçları varsayılan olarak kapalıdır.
 - URL alımı yalnız HTTP/HTTPS ve genel internet IP'leriyle sınırlıdır.
@@ -192,6 +167,6 @@ lisans vermez. Tereddüt halinde resmî bağlantıdaki güncel metin esas alınm
 ## Test
 
 ```bash
-python -m pip install -e ".[dev]"
-python -m pytest
+pip install -e ".[dev]"
+pytest
 ```
