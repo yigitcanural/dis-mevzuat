@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "dis-mevzuat": {
+      "type": "stdio",
+      "command": "${CLAUDE_PROJECT_DIR:-.}/.venv/bin/dis-mevzuat",
+      "args": ["serve"],
+      "env": {
+        "DM_DATA_DIR": "${CLAUDE_PROJECT_DIR:-.}/data",
+        "DM_ENABLE_ADMIN_TOOLS": "false",
+        "DM_TRANSPORT": "stdio"
+      }
+    }
+  }
+}
