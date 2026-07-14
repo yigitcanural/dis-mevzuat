@@ -1,0 +1,111 @@
+{
+  "sources": [
+    {
+      "title": "Sağlık Hizmetlerinde Tanıtım ve Bilgilendirme Faaliyetleri Hakkında Yönetmelik",
+      "authority": "Sağlık Bakanlığı",
+      "source_type": "mevzuat",
+      "published_at": "2025-11-12",
+      "effective_from": "2025-11-12",
+      "url": "https://antalyaism.saglik.gov.tr/TR-366500/saglik-hizmetlerinde-tanitim-ve-bilgilendirme--faaliyetleri-hakkinda-yonetmelik.html"
+    },
+    {
+      "title": "Dişhekimlerinin Her Türlü İletişim Ortamında Yayın Yapmalarına İlişkin Kılavuz",
+      "authority": "Türk Dişhekimleri Birliği",
+      "source_type": "tdb_kilavuzu",
+      "published_at": "2026-03-04",
+      "effective_from": "2026-03-04",
+      "url": "https://tdb.org.tr/mevzuat_goster.php?Id=30"
+    },
+    {
+      "title": "Ağız ve Diş Sağlığı Hizmeti Sunulan Özel Sağlık Kuruluşları Hakkında Yönetmelik",
+      "authority": "Sağlık Bakanlığı",
+      "source_type": "mevzuat",
+      "published_at": "2022-10-06",
+      "effective_from": "2022-10-06",
+      "url": "https://tdb.org.tr/mevzuat_goster.php?Id=97"
+    },
+    {
+      "title": "TDB Dişhekimliği Meslek Etiği Kuralları",
+      "authority": "Türk Dişhekimleri Birliği",
+      "source_type": "meslek_etigi",
+      "url": "https://www.tdb.org.tr/mevzuat_goster.php?Id=210"
+    },
+    {
+      "title": "Ticari Reklam ve Haksız Ticari Uygulamalar Yönetmeliği",
+      "authority": "Ticaret Bakanlığı",
+      "source_type": "mevzuat",
+      "published_at": "2015-01-10",
+      "effective_from": "2015-01-10",
+      "url": "https://www.tdb.org.tr/mevzuat_goster.php?Id=144"
+    },
+    {
+      "title": "KVKK 2022/630 Sayılı Karar Özeti",
+      "authority": "Kişisel Verileri Koruma Kurumu",
+      "source_type": "kvkk_karari",
+      "published_at": "2022-06-29",
+      "url": "https://www.kvkk.gov.tr/Icerik/7567/2022-630"
+    },
+    {
+      "title": "Sağlıkta Dijital Tanıtım ve Bilgilendirme Kuralları",
+      "authority": "Karabük İl Sağlık Müdürlüğü",
+      "source_type": "il_saglik_duyurusu",
+      "published_at": "2026-04-24",
+      "url": "https://karabukism.saglik.gov.tr/TR-382146/saglikta-dijital-tanitim-ve-bilgilendirme-kurallari.html"
+    },
+    {
+      "title": "1219 Sayılı Tababet ve Şuabatı San'atlarının Tarzı İcrasına Dair Kanun",
+      "authority": "Türkiye Cumhuriyeti",
+      "source_type": "kanun",
+      "published_at": "1928-04-14",
+      "url": "https://www.tdb.org.tr/tdb/v2/ekler/Mevzuat/1219_Sayili_Kanun_01.03.2024.pdf"
+    },
+    {
+      "title": "Tıbbi Deontoloji Nizamnamesi",
+      "authority": "Türkiye Cumhuriyeti",
+      "source_type": "meslek_mevzuati",
+      "published_at": "1960-02-19",
+      "url": "https://www.tdb.org.tr/mevzuat_goster.php?Id=101"
+    },
+    {
+      "title": "Türk Dişhekimleri Birliği ve Dişhekimleri Odalarının Disiplin Yönetmeliği",
+      "authority": "Türk Dişhekimleri Birliği",
+      "source_type": "disiplin_mevzuati",
+      "url": "https://www.tdb.org.tr/mevzuat_goster.php?Id=39"
+    },
+    {
+      "title": "Hasta Hakları Yönetmeliği",
+      "authority": "Sağlık Bakanlığı",
+      "source_type": "mevzuat",
+      "published_at": "1998-08-01",
+      "url": "https://tdb.org.tr/mevzuat_goster.php?Id=133"
+    },
+    {
+      "title": "Kişisel Sağlık Verileri Hakkında Yönetmelik",
+      "authority": "Sağlık Bakanlığı",
+      "source_type": "mevzuat",
+      "published_at": "2019-06-21",
+      "url": "https://www.tdb.org.tr/mevzuat_goster.php?Id=186"
+    },
+    {
+      "title": "Uluslararası Sağlık Turizmi ve Turistin Sağlığı Hakkında Yönetmelik",
+      "authority": "Sağlık Bakanlığı",
+      "source_type": "saglik_turizmi_mevzuati",
+      "published_at": "2025-04-26",
+      "effective_from": "2025-04-26",
+      "url": "https://www.tdb.org.tr/mevzuat_goster.php?Id=191"
+    },
+    {
+      "title": "6698 Sayılı Kişisel Verilerin Korunması Kanunu",
+      "authority": "Kişisel Verileri Koruma Kurumu",
+      "source_type": "kanun",
+      "published_at": "2016-04-07",
+      "url": "https://tdb.org.tr/mevzuat_goster.php?Id=179"
+    },
+    {
+      "title": "362 Sayılı Reklam Kurulu Basın Bülteni",
+      "authority": "Ticaret Bakanlığı Reklam Kurulu",
+      "source_type": "reklam_kurulu_bulteni",
+      "url": "https://ticaret.gov.tr/data/5d1c9edd13b87615344cd4c8/_362_Reklam_Kurulu_Basin_Bulteni..pdf"
+    }
+  ]
+}

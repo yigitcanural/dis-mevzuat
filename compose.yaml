@@ -1,0 +1,28 @@
+services:
+  dis-mevzuat:
+    build:
+      context: .
+    container_name: dis-mevzuat
+    restart: unless-stopped
+    environment:
+      DM_DATA_DIR: /app/data
+      DM_ENABLE_ADMIN_TOOLS: "false"
+      DM_TRANSPORT: http
+      DM_HOST: 0.0.0.0
+      DM_PORT: "8000"
+    ports:
+      # Lokal kurulum: MCP internete değil, yalnızca bu Mac'e açıktır.
+      - "127.0.0.1:8000:8000"
+    volumes:
+      # Mevzuat indexi container silinse veya güncellense de korunur.
+      - ./data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import socket; s=socket.create_connection(('127.0.0.1', 8000), 2); s.close()"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

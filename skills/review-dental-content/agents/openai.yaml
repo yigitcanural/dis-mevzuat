@@ -1,0 +1,11 @@
+interface:
+  display_name: "Diş İçeriği Ön Kontrolü"
+  short_description: "Sağlık içeriklerini kaynaklı risk kontrolünden geçirir"
+  default_prompt: "Use $review-dental-content to classify this as a caption or article, explain domestic and international risks separately, and distinguish non-compliance from advertising. Cite regulation or decision names and article numbers inline; omit links and MCP metadata unless requested."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "dis-mevzuat"
+      description: "Diş Mevzuat MCP hukuk ve uygulama kaynakları"
+      transport: "streamable_http"
+      url: "http://127.0.0.1:8000/mcp"
