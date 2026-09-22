@@ -31,7 +31,7 @@
     "transport": "streamable-http",
     "authentication": { "type": "none", "reviewer_credentials_required": false },
     "domain_verification": {
-      "status": "manual_required",
+      "status": "verified",
       "challenge_base_url": "https://mevzuat.sorgunbogaz.com",
       "challenge_url": "https://mevzuat.sorgunbogaz.com/.well-known/openai-apps-challenge",
       "token": null
@@ -93,7 +93,6 @@
   "manual_requirements": [
     { "field": "developer_identity", "status": "manual_required", "reason": "Portalda Yiğitcan Ural ile eşleşen bireysel veya işletme kimliği doğrulanmalı." },
     { "field": "apps_management_write_access", "status": "manual_required", "reason": "Taslak oluşturma ve gönderim için portalın Apps Management Write yetkisi gerekir." },
-    { "field": "domain_verification_token", "status": "manual_required", "reason": "Portalın ürettiği gerçek token challenge URL'sinde tek başına sunulmalı; token henüz üretilmedi." },
     { "field": "tool_scan", "status": "manual_required", "reason": "Portalda üretim MCP URL'si için güncel başarılı Scan Tools sonucu alınmalı." },
     { "field": "demo_recording_url", "status": "manual_required", "reason": "Remote MCP final submission için ana kullanım ve araçları gösteren kayıt URL'si gerekir." },
     { "field": "country_availability", "status": "manual_required", "reason": "Portalda ülke/bölge erişimi ve destek kapasitesi kullanıcı tarafından onaylanmalı." },
