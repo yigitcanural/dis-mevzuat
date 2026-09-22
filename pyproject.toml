@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dis-mevzuat"
-version = "0.1.0"
-description = "Turkish health and dental communications source MCP with versioned hybrid retrieval"
+version = "0.2.0"
+description = "Provider-neutral Turkish health-tourism regulations MCP with versioned hybrid retrieval"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [{ name = "Diş Mevzuat contributors" }]
+authors = [{ name = "Türkiye Sağlık Turizmi Mevzuat contributors" }]
 dependencies = [
   "beautifulsoup4>=4.12,<5",
   "fastmcp>=3.0,<4",
@@ -21,6 +21,7 @@ dependencies = [
 
 [project.scripts]
 dis-mevzuat = "dis_mevzuat.cli:main"
+saglik-turizmi-mevzuat = "dis_mevzuat.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0,<10", "pytest-asyncio>=0.24,<2"]

@@ -3,130 +3,164 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from .config import Settings
 from .service import ComplianceService, utc_now
+from .web import register_public_routes
 
 
 settings = Settings.from_env()
 service = ComplianceService(settings)
 
-mcp = FastMCP(
-    "Diş Mevzuat",
-    instructions=(
-        "Türkiye'de sağlık ve diş kliniği tanıtım/bilgilendirme kaynaklarında arama yapar. "
-        "Araç sonuçları hukuki görüş değildir. Yanıtlarda kaynak başlığı, kurum, tarih, madde ve "
-        "kaynak kimliği belirtilmelidir. Güncel kaynaklar varsayılan olarak tercih edilmelidir."
-    ),
+READ_ONLY = ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=False,
 )
 
+SERVER_INSTRUCTIONS = """
+Bu read-only servis Türkiye sağlık turizmi, sağlık hizmetlerinde tanıtım ve
+bilgilendirme, sosyal medya, fiyat/kampanya, hasta yorumu, before/after,
+KVKK, hasta görseli/açık rıza ve sağlık turizmi yetkilendirmesi hakkında
+resmî ve birincil kaynaklarda araştırma yapar.
 
-@mcp.tool
-async def search_sources(
-    query: Annotated[str, Field(description="Türkçe doğal dil veya anahtar kelime sorgusu")],
-    top_k: Annotated[int, Field(ge=1, le=20)] = 8,
-    source_type: Annotated[str | None, Field(description="İsteğe bağlı kaynak türü filtresi")] = None,
-    authority: Annotated[str | None, Field(description="İsteğe bağlı kurum filtresi")] = None,
-    active_only: Annotated[bool, Field(description="Yalnız güncel/aktif kaynakları ara")] = True,
+Bir mevzuat sorusunda önce search_regulations ile dar sorgular çalıştırın;
+gerekirse get_chunk veya get_source ile kritik metni doğrulayın. Kaynak
+bulunmadan kesin sonuç üretmeyin. current kaynakları archive kaynaklardan
+önde tutun, yayın/yürürlük/toplanma tarihlerini kontrol edin. Kaynaklar
+çelişiyorsa veya farklı dönemlere aitse bunu açıkça söyleyin. Kaynakta açıkça
+yazan metin ile model yorumunu birbirinden ayırın ve resmî URL'yi kanıt olarak
+koruyun.
+
+Bu servis hukuki danışmanlık veya yayın izni vermez; tıbbi teşhis koymaz ve
+tedavi planlamaz. Hastadan veya kullanıcıdan hasta fotoğrafı, video, CRM
+verisi, hasta dosyası ya da tıbbi kayıt istemeyin ve bunları bu mevzuat
+indeksine eklemeyin.
+""".strip()
+
+mcp = FastMCP("Türkiye Sağlık Turizmi Mevzuat", instructions=SERVER_INSTRUCTIONS)
+
+
+@mcp.tool(
+    title="Mevzuatta ara",
+    description=(
+        "Onaylanmış Türkiye sağlık turizmi ve sağlık hizmetleri mevzuatında "
+        "FTS5, etkinse semantik, ardından hibrit sıralamayla arama yapar. "
+        "Önce bunu çağırın; sonuçtaki chunk_id ile get_chunk kullanarak kritik "
+        "kanıtı doğrulayın. Varsayılan olarak yalnız güncel kaynakları döndürür."
+    ),
+    annotations=READ_ONLY,
+    timeout=settings.tool_timeout,
+)
+async def search_regulations(
+    query: Annotated[
+        str,
+        Field(
+            min_length=2,
+            max_length=500,
+            description="Türkçe doğal dil veya dar mevzuat anahtar kelime sorgusu",
+        ),
+    ],
+    top_k: Annotated[int, Field(ge=1, le=20, description="Döndürülecek en iyi sonuç")] = 8,
+    source_type: Annotated[
+        str | None, Field(max_length=100, description="İsteğe bağlı kaynak türü filtresi")
+    ] = None,
+    institution: Annotated[
+        str | None, Field(max_length=160, description="İsteğe bağlı yayımlayan kurum filtresi")
+    ] = None,
+    current_only: Annotated[
+        bool, Field(description="Yalnız current/aktif kaynaklarda ara")
+    ] = True,
 ) -> dict:
-    """Onaylı sağlık kaynaklarında kelime ve varsa semantik arama yapar."""
-    return await service.search(query, top_k, source_type, authority, active_only)
+    return await service.search(query, top_k, source_type, institution, current_only)
 
 
-@mcp.tool
+@mcp.tool(
+    title="Kaynakları listele",
+    description=(
+        "İndeksteki kaynakların kurum, kategori, tarih, sürüm, current/archive "
+        "durumu ve resmî URL künyelerini listeler; metin içi arama yapmaz."
+    ),
+    annotations=READ_ONLY,
+    timeout=settings.tool_timeout,
+)
 def list_sources(
     status: Annotated[
-        str | None, Field(description="active, archived veya boş bırakarak tümü")
+        str | None, Field(description="active, archived veya tümü için null")
     ] = "active",
 ) -> dict:
-    """Indexteki kaynakların başlık, kurum, tarih, durum ve bağlantılarını listeler."""
-    sources = service.db.list_sources(status)
-    for source in sources:
-        source.pop("raw_path", None)
-        source.pop("metadata_json", None)
-    return {"count": len(sources), "sources": sources}
+    return service.list_sources(status)
 
 
-@mcp.tool
+@mcp.tool(
+    title="Kaynağı getir",
+    description=(
+        "Bir source_id için kaynak künyesi, resmî kanıt alanları ve istenirse "
+        "tüm indekslenmiş parçaları getirir. Büyük belgelerde önce get_chunk tercih edin."
+    ),
+    annotations=READ_ONLY,
+    timeout=settings.tool_timeout,
+)
 def get_source(
-    source_id: Annotated[str, Field(description="Kaynak kimliği")],
-    include_chunks: Annotated[bool, Field(description="Metin parçalarını da getir")] = False,
+    source_id: Annotated[str, Field(min_length=8, max_length=64, description="Kaynak kimliği")],
+    include_chunks: Annotated[bool, Field(description="Tüm metin parçalarını dahil et")] = False,
 ) -> dict:
-    """Bir kaynağın künyesini ve istenirse indexlenmiş metnini getirir."""
     return service.source_detail(source_id, include_chunks)
 
 
-@mcp.tool
-def get_chunk(chunk_id: Annotated[str, Field(description="Arama sonucundaki parça kimliği")]) -> dict:
-    """Arama sonucundaki tek bir madde/metin parçasını tam künyesiyle getirir."""
+@mcp.tool(
+    title="Kanıt parçasını getir",
+    description=(
+        "search_regulations sonucundaki tek bir chunk_id için tam metni; madde/bölüm, "
+        "kaynak sürümü, current/archive durumu ve resmî URL kanıtıyla getirir."
+    ),
+    annotations=READ_ONLY,
+    timeout=settings.tool_timeout,
+)
+def get_chunk(
+    chunk_id: Annotated[str, Field(min_length=8, max_length=64, description="Metin parçası kimliği")]
+) -> dict:
     return service.chunk_detail(chunk_id)
 
 
-@mcp.tool
+@mcp.tool(
+    title="Kaynak durumunu kontrol et",
+    description=(
+        "Bir source_id'nin current/archive durumunu, sürüm zincirini, tarihlerini, "
+        "SHA-256 özetini ve resmî URL'sini metni indirmeden kontrol eder."
+    ),
+    annotations=READ_ONLY,
+    timeout=settings.tool_timeout,
+)
+def get_source_status(
+    source_id: Annotated[str, Field(min_length=8, max_length=64, description="Kaynak kimliği")]
+) -> dict:
+    return service.source_status(source_id)
+
+
+@mcp.tool(
+    title="Sistem durumunu göster",
+    description=(
+        "İndeks, aktif kaynak ve semantik retrieval durumunu gösterir. "
+        "Hasta veya kullanıcı verisi almaz."
+    ),
+    annotations=READ_ONLY,
+    timeout=settings.tool_timeout,
+)
 def system_status() -> dict:
-    """Kaynak, index ve semantik arama durumunu gösterir."""
     return {
         **service.db.stats(),
+        "service": "turkiye-health-tourism-regulations",
+        "service_version": "0.2.0",
+        "public_read_only": True,
         "semantic_search_enabled": service.embedder.enabled,
         "embedding_model": settings.embedding_model if service.embedder.enabled else None,
-        "admin_tools_enabled": settings.enable_admin_tools,
+        "admin_tools_exposed": False,
         "checked_at": utc_now(),
     }
 
 
-if settings.enable_admin_tools:
-
-    @mcp.tool
-    async def preview_source(
-        url: Annotated[str, Field(description="Eklenecek resmî web sayfası veya PDF bağlantısı")],
-        authority: Annotated[str, Field(description="Kaynağı yayımlayan kurum")],
-        source_type: Annotated[
-            str,
-            Field(description="Örn. mevzuat, tdb_kilavuzu, kvkk_karari, reklam_kurulu_karari"),
-        ],
-        title: Annotated[str | None, Field(description="Boşsa sayfadan okunur")] = None,
-        published_at: Annotated[str | None, Field(description="YYYY-MM-DD")]=None,
-        effective_from: Annotated[str | None, Field(description="YYYY-MM-DD")]=None,
-    ) -> dict:
-        """Bağlantıyı indirir ve onaydan önce güvenli bir kaynak önizlemesi hazırlar."""
-        return await service.preview_url(
-            url, authority, source_type, title, published_at, effective_from
-        )
-
-    @mcp.tool
-    def preview_text_source(
-        text: Annotated[str, Field(min_length=80, description="Eklenecek kaynak metni")],
-        title: Annotated[str, Field(description="Belgenin tam adı")],
-        authority: Annotated[str, Field(description="Kaynağı yayımlayan kurum")],
-        source_type: Annotated[str, Field(description="Kaynak türü")],
-        source_url: Annotated[str | None, Field(description="Varsa resmî kaynak bağlantısı")]=None,
-        published_at: Annotated[str | None, Field(description="YYYY-MM-DD")]=None,
-        effective_from: Annotated[str | None, Field(description="YYYY-MM-DD")]=None,
-    ) -> dict:
-        """Yapıştırılmış metni onaydan önce kaynak olarak hazırlar; doğrudan aktifleştirmez."""
-        return service.preview_text(
-            text, title, authority, source_type, source_url, published_at, effective_from
-        )
-
-    @mcp.tool
-    async def approve_source(
-        stage_id: Annotated[str, Field(description="preview_source sonucundaki stage_id")]
-    ) -> dict:
-        """Önizlenmiş kaynağı onaylayıp kalıcı indexe ekler."""
-        return await service.approve_stage(stage_id)
-
-    @mcp.tool
-    async def check_source_update(
-        source_id: Annotated[str, Field(description="Kontrol edilecek aktif kaynak kimliği")]
-    ) -> dict:
-        """Kaynak bağlantısını yeniden indirir; değişiklik varsa onaylanabilir yeni sürüm hazırlar."""
-        return await service.refresh_source(source_id)
-
-    @mcp.tool
-    def archive_source(
-        source_id: Annotated[str, Field(description="Arşivlenecek kaynak kimliği")]
-    ) -> dict:
-        """Kaynağı silmeden aktif arama havuzundan çıkarır."""
-        changed = service.db.archive_source(source_id, utc_now())
-        return {"source_id": source_id, "archived": changed}
+register_public_routes(mcp, service, settings)

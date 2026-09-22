@@ -18,13 +18,21 @@ class SourceError(ValueError):
     pass
 
 
-def _validate_public_url(url: str) -> None:
+def _validate_public_url(url: str, allowed_domains: tuple[str, ...] = ()) -> None:
     parsed = urlparse(url)
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
         raise SourceError("Yalnızca geçerli http/https bağlantıları kabul edilir.")
     host = parsed.hostname.lower()
+    if parsed.username or parsed.password:
+        raise SourceError("Kullanıcı bilgisi içeren kaynak bağlantıları kabul edilmez.")
+    if parsed.port not in {None, 80, 443}:
+        raise SourceError("Kaynak bağlantısı yalnız standart HTTP/HTTPS portlarını kullanabilir.")
     if host in {"localhost", "localhost.localdomain"}:
         raise SourceError("Yerel adreslerden kaynak alınamaz.")
+    if allowed_domains and not any(
+        host == domain or host.endswith(f".{domain}") for domain in allowed_domains
+    ):
+        raise SourceError("Kaynak alan adı yapılandırılmış resmî kurum allowlist'inde değil.")
     try:
         addresses = socket.getaddrinfo(host, parsed.port or (443 if parsed.scheme == "https" else 80))
     except socket.gaierror as exc:
@@ -36,7 +44,12 @@ def _validate_public_url(url: str) -> None:
 
 
 def _extract_pdf(data: bytes) -> tuple[str, dict]:
-    reader = PdfReader(io.BytesIO(data))
+    try:
+        reader = PdfReader(io.BytesIO(data))
+    except Exception as exc:
+        raise SourceError("PDF güvenli biçimde ayrıştırılamadı.") from exc
+    if len(reader.pages) > 1000:
+        raise SourceError("PDF izin verilen 1000 sayfa sınırını aşıyor.")
     pages: list[str] = []
     for page in reader.pages:
         pages.append(page.extract_text() or "")
@@ -101,17 +114,26 @@ def _extract_html(data: bytes, encoding: str | None) -> tuple[str, str | None, d
 
 
 async def extract_url(
-    url: str, max_bytes: int, timeout: float
+    url: str,
+    max_bytes: int,
+    timeout: float,
+    allowed_domains: tuple[str, ...] = (),
+    transport: httpx.AsyncBaseTransport | None = None,
 ) -> ExtractedSource:
     headers = {
         "User-Agent": "HealthComplianceMCP/0.1 (+source retrieval; contact repository owner)"
     }
     current_url = url
-    async with httpx.AsyncClient(timeout=timeout, follow_redirects=False, headers=headers) as client:
-        for redirect_count in range(6):
-            # Her yönlendirmeyi ayrı doğrulamak, herkese açık bir URL'nin sunucu içi
-            # bir adrese yönlendirilerek kullanılmasını engeller.
-            await asyncio.to_thread(_validate_public_url, current_url)
+    for redirect_count in range(6):
+        # Her yönlendirmeyi yeni bir client açmadan önce doğrulamak, herkese açık
+        # bir URL'nin sunucu içi bir adrese yönlendirilerek kullanılmasını engeller.
+        _validate_public_url(current_url, allowed_domains)
+        async with httpx.AsyncClient(
+            timeout=timeout,
+            follow_redirects=False,
+            headers=headers,
+            transport=transport,
+        ) as client:
             async with client.stream("GET", current_url) as response:
                 if response.is_redirect:
                     location = response.headers.get("location")
@@ -139,8 +161,8 @@ async def extract_url(
                 final_url = str(response.url)
                 encoding = response.encoding
                 break
-        else:  # pragma: no cover - döngü üstte kontrollü biçimde sonlanır
-            raise SourceError("Kaynak indirilemedi.")
+    else:  # pragma: no cover - döngü üstte kontrollü biçimde sonlanır
+        raise SourceError("Kaynak indirilemedi.")
 
     is_pdf = content_type == "application/pdf" or final_url.lower().endswith(".pdf")
     if is_pdf:

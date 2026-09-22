@@ -27,6 +27,11 @@ async def _seed(manifest_path: Path) -> None:
                 item.get("published_at"),
                 item.get("effective_from"),
                 supersedes_source_id=previous["id"] if previous else None,
+                jurisdiction=item.get("jurisdiction", "TR"),
+                category=item.get("category", "healthcare"),
+                subcategory=item.get("subcategory"),
+                version=item.get("version"),
+                tags=item.get("tags", []),
             )
             result = await service.approve_stage(preview["stage_id"])
             label = "Zaten vardı" if result.get("duplicate") else "Eklendi"
@@ -39,12 +44,18 @@ async def _seed(manifest_path: Path) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Diş Mevzuat MCP")
+    parser = argparse.ArgumentParser(description="Türkiye Sağlık Turizmi Mevzuat MCP")
     subparsers = parser.add_subparsers(dest="command", required=True)
     serve = subparsers.add_parser("serve", help="MCP sunucusunu çalıştır")
     serve.add_argument("--transport", choices=["stdio", "http"], default=None)
     serve.add_argument("--host", default=None)
     serve.add_argument("--port", type=int, default=None)
+    admin = subparsers.add_parser(
+        "serve-admin", help="Yalnız yerel kaynak yönetimi MCP sunucusunu çalıştır"
+    )
+    admin.add_argument("--transport", choices=["stdio", "http"], default="stdio")
+    admin.add_argument("--host", default="127.0.0.1")
+    admin.add_argument("--port", type=int, default=8001)
     seed = subparsers.add_parser("seed", help="Kaynak manifestini indir ve indexle")
     seed.add_argument("manifest", type=Path)
     subparsers.add_parser("status", help="Index durumunu göster")
@@ -64,9 +75,42 @@ def main() -> None:
         os.environ["DM_HOST"] = args.host
     if args.port:
         os.environ["DM_PORT"] = str(args.port)
+    if args.command == "serve-admin":
+        if args.transport == "http" and args.host not in {"127.0.0.1", "::1", "localhost"}:
+            parser.error("Admin HTTP sunucusu yalnız loopback adresine bağlanabilir.")
+        from .admin_server import mcp as admin_mcp
+
+        if args.transport == "http":
+            admin_mcp.run(
+                transport="http",
+                host=args.host,
+                port=args.port,
+                path="/mcp",
+                stateless_http=True,
+                json_response=True,
+                uvicorn_config={"access_log": False},
+            )
+        else:
+            admin_mcp.run()
+        return
+
     from .server import mcp, settings
 
     if settings.transport == "http":
-        mcp.run(transport="http", host=settings.host, port=settings.port)
+        from starlette.middleware import Middleware
+
+        from .web import PublicSecurityMiddleware
+
+        mcp.run(
+            transport="http",
+            host=settings.host,
+            port=settings.port,
+            path="/mcp",
+            stateless_http=True,
+            json_response=True,
+            middleware=[Middleware(PublicSecurityMiddleware, settings=settings)],
+            allowed_hosts=list(settings.allowed_hosts) or None,
+            uvicorn_config={"access_log": False},
+        )
     else:
         mcp.run()

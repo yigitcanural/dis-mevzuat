@@ -6,7 +6,12 @@
       "source_type": "mevzuat",
       "published_at": "2025-11-12",
       "effective_from": "2025-11-12",
-      "url": "https://antalyaism.saglik.gov.tr/TR-366500/saglik-hizmetlerinde-tanitim-ve-bilgilendirme--faaliyetleri-hakkinda-yonetmelik.html"
+      "jurisdiction": "TR",
+      "category": "healthcare_advertising",
+      "subcategory": "promotion_and_information",
+      "version": "2025-11-12/33075",
+      "tags": ["reklam", "tanıtım", "sosyal medya", "hasta görseli", "fiyat"],
+      "url": "https://www.resmigazete.gov.tr/eskiler/2025/11/20251112-2.htm"
     },
     {
       "title": "Dişhekimlerinin Her Türlü İletişim Ortamında Yayın Yapmalarına İlişkin Kılavuz",
@@ -22,7 +27,11 @@
       "source_type": "mevzuat",
       "published_at": "2022-10-06",
       "effective_from": "2022-10-06",
-      "url": "https://tdb.org.tr/mevzuat_goster.php?Id=97"
+      "jurisdiction": "TR",
+      "category": "dentistry",
+      "version": "2022-10-06/31975",
+      "tags": ["diş kliniği", "ağız ve diş sağlığı"],
+      "url": "https://www.resmigazete.gov.tr/eskiler/2022/10/20221006-1.htm"
     },
     {
       "title": "TDB Dişhekimliği Meslek Etiği Kuralları",
@@ -92,7 +101,12 @@
       "source_type": "saglik_turizmi_mevzuati",
       "published_at": "2025-04-26",
       "effective_from": "2025-04-26",
-      "url": "https://www.tdb.org.tr/mevzuat_goster.php?Id=191"
+      "jurisdiction": "TR",
+      "category": "health_tourism",
+      "subcategory": "authorization_and_services",
+      "version": "2025-04-26/32882",
+      "tags": ["sağlık turizmi", "yetkilendirme", "aracı kuruluş", "HealthTürkiye"],
+      "url": "https://www.resmigazete.gov.tr/eskiler/2025/04/20250426-2.htm"
     },
     {
       "title": "6698 Sayılı Kişisel Verilerin Korunması Kanunu",
