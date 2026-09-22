@@ -1,0 +1,32 @@
+{
+  "name": "turkiye-health-tourism-regulations",
+  "lifecycle": "managed",
+  "github": {
+    "repository": "https://github.com/yigitcanural/dis-mevzuat",
+    "main_branch": "main"
+  },
+  "working_root": "/home/yigit/Desktop/mevzuat/dis-mevzuat",
+  "deploy": {
+    "type": "docker-compose-with-cloudflare-tunnel",
+    "method": "docker compose -f compose.yaml -f compose.home-server.yaml up -d --build dis-mevzuat",
+    "home_server_stack": "/home/yigit/Documents/Codex/2026-09-17/ama-bu-lenovo-laptopu-7-24/outputs/home-server-stack",
+    "external_network": "home-server-backend"
+  },
+  "domain": "mevzuat.sorgunbogaz.com",
+  "service": "health-tourism-regulations-mcp",
+  "health": [
+    "http://127.0.0.1:8000/healthz",
+    "http://127.0.0.1:8000/readyz",
+    "https://mevzuat.sorgunbogaz.com/readyz"
+  ],
+  "mcp": {
+    "public_url": "https://mevzuat.sorgunbogaz.com/mcp",
+    "transport": "streamable-http",
+    "authentication": "none-read-only"
+  },
+  "test_command": ".venv/bin/pytest -q",
+  "build_command": "docker compose build",
+  "backup_command": "./scripts/backup.sh",
+  "restore_command": "./scripts/restore.sh /path/to/backup-directory",
+  "analytics": null
+}
