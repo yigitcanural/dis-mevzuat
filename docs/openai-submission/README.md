@@ -26,7 +26,7 @@ Universal
 **App / plugin name**
 
 ```text
-Türkiye Sağlık Turizmi Mevzuatı
+Sağlık Mevzuatı
 ```
 
 **Developer name**
@@ -55,19 +55,26 @@ assets/openai-plugin-logo.png
 **Category**
 
 ```text
-Research / Reference (portalda sunulan en yakın kategori)
+Healthcare
 ```
+
+OpenAI'nin resmî desteklenen kategori değerlerinden, sağlık hizmetleri ve sağlık
+turizmi mevzuatı araştırma kapsamıyla en uyumlu olanıdır.
 
 **Short description**
 
 ```text
-Search official Turkish health-tourism, healthcare advertising and privacy regulations with source citations and version-aware retrieval.
+Sağlık mevzuatını araştır
 ```
 
 **Long description**
 
 ```text
-A read-only compliance research tool for official Turkish health-tourism and healthcare sources. Search regulations and guidance about healthcare advertising, social media, before/after content, patient testimonials, prices and campaigns, privacy, consent, intermediary organizations and health-tourism authorization. Results include the relevant text, publishing institution, dates, current/archive status, version metadata and the official source URL. The tool does not provide legal advice, publication approval, medical diagnosis or treatment planning, and it must not be used to store patient records or health data.
+Türkiye’de sağlık turizmi ve sağlık hizmetlerine ilişkin mevzuatı resmî kaynaklardan araştırmaya yardımcı olur. Sağlık reklamları, sosyal medya içerikleri, öncesi/sonrası paylaşımları, hasta yorumları, fiyat ve kampanyalar, KVKK, açık rıza, aracı kuruluşlar ve sağlık turizmi yetkilendirmesi gibi konularda ilgili mevzuat metinlerini, tarihleri ve resmî kaynak bağlantılarını bulur.
+
+Sonuçlarda güncel ve arşivlenmiş kaynakları ayırır ve kaynak metni ile model yorumunun birbirine karışmamasına yardımcı olur.
+
+Hukuki danışmanlık, yayın izni, tıbbi teşhis veya tedavi planı sağlamaz.
 ```
 
 **Website URL**
@@ -133,19 +140,15 @@ Türkiye initially; add other countries only if the portal audience policy and s
 ## Starter prompts
 
 ```text
-Instagram'da hastanın öncesi/sonrası fotoğrafını paylaşmaya ilişkin güncel resmî kaynakları bul ve kaynakta yazanla yorumunu ayır.
+Bu Instagram reklamını sağlık mevzuatına göre incele.
 ```
 
 ```text
-Yurt dışındaki hastalara fiyat kampanyası göstermeye ilişkin sağlık turizmi kurallarını güncel kaynaklarıyla karşılaştır.
+Before/after hasta fotoğrafı paylaşmanın kuralları neler?
 ```
 
 ```text
-Hasta yorumlarının sağlık hizmeti tanıtımında kullanımına ilişkin güncel ve arşiv kaynakları ayırarak araştır.
-```
-
-```text
-Saç ekimi kliniğinin influencer ile reklam yapmasına ilişkin resmî kaynaklarda kanıt ara; kesin hukuki onay verme.
+Yurt dışındaki hastalara fiyat kampanyası gösterebilir miyiz?
 ```
 
 ## Tool inventory ve annotations

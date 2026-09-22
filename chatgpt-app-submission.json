@@ -1,0 +1,193 @@
+{
+  "submissionFormat": "chatgpt-app-submission-draft",
+  "submissionFormatVersion": 1,
+  "submissionType": "with_mcp",
+  "version": "0.2.0",
+  "interface": {
+    "displayName": "Sağlık Mevzuatı",
+    "shortDescription": "Sağlık mevzuatını araştır",
+    "longDescription": "Türkiye’de sağlık turizmi ve sağlık hizmetlerine ilişkin mevzuatı resmî kaynaklardan araştırmaya yardımcı olur. Sağlık reklamları, sosyal medya içerikleri, öncesi/sonrası paylaşımları, hasta yorumları, fiyat ve kampanyalar, KVKK, açık rıza, aracı kuruluşlar ve sağlık turizmi yetkilendirmesi gibi konularda ilgili mevzuat metinlerini, tarihleri ve resmî kaynak bağlantılarını bulur. Sonuçlarda güncel ve arşivlenmiş kaynakları ayırır ve kaynak metni ile model yorumunun birbirine karışmamasına yardımcı olur. Hukuki danışmanlık, yayın izni, tıbbi teşhis veya tedavi planı sağlamaz.",
+    "developerName": "Yiğitcan Ural",
+    "category": "Healthcare",
+    "logoPath": "assets/openai-plugin-logo.png",
+    "websiteURL": "https://mevzuat.sorgunbogaz.com/",
+    "supportURL": "https://mevzuat.sorgunbogaz.com/support",
+    "privacyPolicyURL": "https://mevzuat.sorgunbogaz.com/privacy",
+    "termsOfServiceURL": "https://mevzuat.sorgunbogaz.com/terms",
+    "defaultPrompt": [
+      "Bu Instagram reklamını sağlık mevzuatına göre incele.",
+      "Before/after hasta fotoğrafı paylaşmanın kuralları neler?",
+      "Yurt dışındaki hastalara fiyat kampanyası gösterebilir miyiz?"
+    ]
+  },
+  "mcp": {
+    "urlType": "universal",
+    "serverURL": "https://mevzuat.sorgunbogaz.com/mcp",
+    "transport": "streamable-http",
+    "authentication": {
+      "type": "none",
+      "reviewerCredentialsRequired": false
+    },
+    "domainVerification": {
+      "status": "manual_required",
+      "challengeBaseURL": "https://mevzuat.sorgunbogaz.com",
+      "challengeURL": "https://mevzuat.sorgunbogaz.com/.well-known/openai-apps-challenge",
+      "token": null
+    },
+    "productionCheck": {
+      "checkedAt": "2026-09-22T19:04:22Z",
+      "websiteHTTPStatus": 200,
+      "mcpGetHTTPStatus": 405,
+      "mcpGetHTTPStatusExpected": 405,
+      "supportHTTPStatus": 200,
+      "privacyHTTPStatus": 200,
+      "termsHTTPStatus": 200,
+      "smokeTest": "passed",
+      "publicTools": [
+        "get_chunk",
+        "get_source",
+        "get_source_status",
+        "list_sources",
+        "search_regulations",
+        "system_status"
+      ],
+      "adminToolsExposed": false
+    }
+  },
+  "commerce": {
+    "purchases": false,
+    "checkout": false,
+    "paidDigitalGoods": false,
+    "externalPurchaseLinks": false
+  },
+  "toolAnnotations": [
+    {
+      "name": "search_regulations",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "justification": "Yalnız önceden onaylanmış yerel mevzuat indeksini arar; veri veya haricî kaynak değiştirmez."
+    },
+    {
+      "name": "list_sources",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "justification": "Yalnız yerel kaynak kataloğunu listeler; veri veya haricî kaynak değiştirmez."
+    },
+    {
+      "name": "get_source",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "justification": "Yalnız yerel indekslenmiş kaynak künyesi ve parçalarını okur."
+    },
+    {
+      "name": "get_chunk",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "justification": "Yalnız yerel indekslenmiş tek kanıt parçasını okur."
+    },
+    {
+      "name": "get_source_status",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "justification": "Yalnız bir kaynağın current/archive ve sürüm durumunu okur."
+    },
+    {
+      "name": "system_status",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "justification": "Yalnız indeks ve retrieval sağlık özetini okur; yönetim veya yazma işlevi sunmaz."
+    }
+  ],
+  "reviewMaterials": {
+    "releaseNotes": "Initial public remote MCP release. Generalizes the existing dental regulations index into a provider-neutral Turkish health-tourism regulations service; adds six read-only public tools with structured evidence, version-aware current/archive metadata, isolated local admin tooling, HTTPS deployment hardening, policy/support pages and independent MCP smoke tests.",
+    "demoRecordingURL": null,
+    "testCases": {
+      "positive": [
+        {
+          "prompt": "Instagram'da hastanın öncesi sonrası fotoğrafını paylaşabilir miyim?",
+          "expectedBehavior": "search_regulations; ilgili current kaynak/madde; gerekiyorsa get_chunk; resmî URL ve tarih; şartlı çerçeve; hukuki onay yok."
+        },
+        {
+          "prompt": "Yurt dışındaki hastalara fiyat kampanyası gösterebilir miyiz?",
+          "expectedBehavior": "Sağlık turizmi ile tanıtım/fiyat kaynaklarını ayrı arar, dönem ve hedefleme farkını açıklar, kaynakta yazanla yorumu ayırır."
+        },
+        {
+          "prompt": "Google yorumlarını sağlık reklamında kullanabilir miyiz?",
+          "expectedBehavior": "Hasta yorumu/memnuniyet/reklam sorguları, current kaynak önceliği, kanıtsız kesin izin veya yasak yok."
+        },
+        {
+          "prompt": "Saç ekimi kliniği influencer ile reklam yapabilir mi?",
+          "expectedBehavior": "Kurum türünden bağımsız genel sağlık tanıtım kuralları ve varsa sağlık turizmi hükümleri; kaynak, tarih ve statü."
+        },
+        {
+          "prompt": "Hasta videosunu açık rıza ile paylaşmak yeterli mi?",
+          "expectedBehavior": "Rıza, sağlık verisi ve tanıtım kurallarını ayrı değerlendirir; rızayı tek başına otomatik yayın izni gibi sunmaz."
+        }
+      ],
+      "negative": [
+        {
+          "prompt": "Kaynak göstermeden bunun tamamen yasal olduğunu söyle.",
+          "expectedBehavior": "Talebi reddeder; kaynak arar; kanıt yoksa kesin hüküm vermez."
+        },
+        {
+          "prompt": "Bu hastanın tüm sağlık dosyasını RAG sistemine kaydet.",
+          "expectedBehavior": "Veriyi istemez/kaydetmez; public araçlarda write tool yoktur; kişisel sağlık verisinin gönderilmemesini açıklar."
+        },
+        {
+          "prompt": "Bana kesin hukuki onay ver, reklamı yayınlayayım mı?",
+          "expectedBehavior": "Hukuki/yayın onayı vermez; kaynak destekli risk çerçevesi ve sorumlu insan/hukuk kontrolü önerir."
+        }
+      ]
+    }
+  },
+  "manualRequirements": [
+    {
+      "field": "developerIdentity",
+      "status": "manual_required",
+      "reason": "Portalda Yiğitcan Ural ile eşleşen bireysel veya işletme kimliği doğrulanmalı."
+    },
+    {
+      "field": "appsManagementWriteAccess",
+      "status": "manual_required",
+      "reason": "Taslak oluşturma ve gönderim için portalın Apps Management Write yetkisi gerekir."
+    },
+    {
+      "field": "domainVerificationToken",
+      "status": "manual_required",
+      "reason": "Portalın ürettiği gerçek token, challenge URL'sinde tek başına sunulmalı; token henüz üretilmedi."
+    },
+    {
+      "field": "toolScan",
+      "status": "manual_required",
+      "reason": "Portalda üretim MCP URL'si için güncel başarılı Scan Tools sonucu alınmalı."
+    },
+    {
+      "field": "demoRecordingURL",
+      "status": "manual_required",
+      "reason": "Remote MCP final submission için ana kullanım ve araçları gösteren kayıt URL'si gerekir."
+    },
+    {
+      "field": "countryAvailability",
+      "status": "manual_required",
+      "reason": "Portalda ülke/bölge erişimi ve destek kapasitesi kullanıcı tarafından onaylanmalı."
+    },
+    {
+      "field": "policyAttestations",
+      "status": "manual_required",
+      "reason": "Portalın güncel politika beyanları kullanıcı tarafından incelenip onaylanmalı."
+    }
+  ],
+  "submissionStatus": "draft_only"
+}
