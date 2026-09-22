@@ -1,0 +1,10 @@
+services:
+  dis-mevzuat:
+    networks:
+      - default
+      - home-server-backend
+
+networks:
+  home-server-backend:
+    external: true
+    name: home-server-backend

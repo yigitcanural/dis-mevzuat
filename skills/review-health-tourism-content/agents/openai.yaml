@@ -1,0 +1,11 @@
+interface:
+  display_name: "Sağlık Turizmi İçerik Ön Kontrolü"
+  short_description: "Sağlık içeriklerini kaynaklı risk kontrolünden geçirir"
+  default_prompt: "Use $review-health-tourism-content to review this healthcare or health-tourism content with current official sources, separate domestic and international scenarios, and avoid giving legal approval."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "turkiye-health-tourism-regulations"
+      description: "Türkiye sağlık turizmi ve sağlık hizmetleri resmî kaynak indeksi"
+      transport: "streamable_http"
+      url: "https://mevzuat.sorgunbogaz.com/mcp"

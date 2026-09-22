@@ -5,7 +5,7 @@ interface:
 dependencies:
   tools:
     - type: "mcp"
-      value: "dis-mevzuat"
-      description: "Diş Mevzuat MCP hukuk ve uygulama kaynakları"
+      value: "turkiye-health-tourism-regulations"
+      description: "Türkiye Sağlık Turizmi Mevzuat MCP resmî kaynakları"
       transport: "streamable_http"
-      url: "http://127.0.0.1:8000/mcp"
+      url: "https://mevzuat.sorgunbogaz.com/mcp"

@@ -40,9 +40,17 @@ class ComplianceService:
         published_at: str | None = None,
         effective_from: str | None = None,
         supersedes_source_id: str | None = None,
+        jurisdiction: str = "TR",
+        category: str = "healthcare",
+        subcategory: str | None = None,
+        version: str | None = None,
+        tags: list[str] | None = None,
     ) -> dict[str, Any]:
         extracted = await extract_url(
-            url, self.settings.max_source_bytes, self.settings.request_timeout
+            url,
+            self.settings.max_source_bytes,
+            self.settings.request_timeout,
+            self.settings.source_allowed_domains,
         )
         return self._stage(
             text=extracted.text,
@@ -56,6 +64,11 @@ class ComplianceService:
             content_type=extracted.content_type,
             metadata=extracted.metadata,
             supersedes_source_id=supersedes_source_id,
+            jurisdiction=jurisdiction,
+            category=category,
+            subcategory=subcategory,
+            version=version,
+            tags=tags or [],
         )
 
     def preview_text(
@@ -68,6 +81,11 @@ class ComplianceService:
         published_at: str | None = None,
         effective_from: str | None = None,
         supersedes_source_id: str | None = None,
+        jurisdiction: str = "TR",
+        category: str = "healthcare",
+        subcategory: str | None = None,
+        version: str | None = None,
+        tags: list[str] | None = None,
     ) -> dict[str, Any]:
         return self._stage(
             text=text,
@@ -81,6 +99,11 @@ class ComplianceService:
             content_type="text/plain",
             metadata={"pasted_text": True},
             supersedes_source_id=supersedes_source_id,
+            jurisdiction=jurisdiction,
+            category=category,
+            subcategory=subcategory,
+            version=version,
+            tags=tags or [],
         )
 
     def _stage(
@@ -97,6 +120,11 @@ class ComplianceService:
         content_type: str,
         metadata: dict[str, Any],
         supersedes_source_id: str | None,
+        jurisdiction: str,
+        category: str,
+        subcategory: str | None,
+        version: str | None,
+        tags: list[str],
     ) -> dict[str, Any]:
         cleaned = normalize_text(text)
         if len(cleaned) < 80:
@@ -123,6 +151,11 @@ class ComplianceService:
             "supersedes_source_id": supersedes_source_id,
             "metadata_json": json.dumps(metadata, ensure_ascii=False),
             "created_at": now,
+            "jurisdiction": jurisdiction.strip() or "TR",
+            "category": category.strip() or "healthcare",
+            "subcategory": subcategory.strip() if subcategory else None,
+            "version": version.strip() if version else None,
+            "tags_json": json.dumps(sorted(set(tags)), ensure_ascii=False),
         }
         self.db.insert_stage(stage)
         chunks = chunk_legal_text(cleaned)
@@ -133,6 +166,12 @@ class ComplianceService:
             "source_type": source_type,
             "url": url,
             "published_at": published_at,
+            "effective_from": effective_from,
+            "jurisdiction": stage["jurisdiction"],
+            "category": stage["category"],
+            "subcategory": stage["subcategory"],
+            "version": stage["version"],
+            "tags": json.loads(stage["tags_json"]),
             "content_sha256": digest,
             "character_count": len(cleaned),
             "estimated_chunks": len(chunks),
@@ -189,6 +228,11 @@ class ComplianceService:
             "created_at": now,
             "updated_at": now,
             "last_checked_at": now,
+            "jurisdiction": stage["jurisdiction"],
+            "category": stage["category"],
+            "subcategory": stage["subcategory"],
+            "version": stage["version"],
+            "tags_json": stage["tags_json"],
         }
         chunks: list[dict[str, Any]] = []
         for idx, chunk in enumerate(chunk_objects):
@@ -241,6 +285,11 @@ class ComplianceService:
             source["published_at"],
             source["effective_from"],
             supersedes_source_id=source_id,
+            jurisdiction=source["jurisdiction"],
+            category=source["category"],
+            subcategory=source["subcategory"],
+            version=source["version"],
+            tags=json.loads(source["tags_json"]),
         )
         if preview["content_sha256"] == source["content_sha256"]:
             unchanged_stage = self.db.get_stage(preview["stage_id"])
@@ -309,7 +358,16 @@ class ComplianceService:
                 authority=row["authority"],
                 source_type=row["source_type"],
                 published_at=row["published_at"],
+                effective_from=row["effective_from"],
                 status=row["status"],
+                official_url=row["url"],
+                retrieved_at=row["last_checked_at"],
+                content_sha256=row["content_sha256"],
+                jurisdiction=row["jurisdiction"],
+                category=row["category"],
+                subcategory=row["subcategory"],
+                version=row["version"],
+                tags=json.loads(row["tags_json"]),
                 heading=row["heading"],
                 article_no=row["article_no"],
                 text=row["text"],
@@ -330,6 +388,7 @@ class ComplianceService:
         if not source:
             raise ValueError("Kaynak bulunamadı.")
         source["metadata"] = json.loads(source.pop("metadata_json"))
+        source["tags"] = json.loads(source.pop("tags_json"))
         source.pop("raw_path", None)
         if include_chunks:
             with self.db.connection() as conn:
@@ -339,12 +398,118 @@ class ComplianceService:
                     (source_id,),
                 ).fetchall()
                 source["chunks"] = [dict(row) for row in rows]
-        return source
+        return self._structured_source(source)
+
+    def list_sources(self, status: str | None = "active") -> dict[str, Any]:
+        if status not in {None, "active", "archived"}:
+            raise ValueError("status yalnız active, archived veya null olabilir.")
+        items = []
+        for source in self.db.list_sources(status):
+            source["tags"] = json.loads(source.pop("tags_json"))
+            source.pop("metadata_json", None)
+            source.pop("raw_path", None)
+            items.append(
+                {
+                    "meta": self._source_meta(source),
+                    "evidence": self._source_evidence(source),
+                }
+            )
+        return {"count": len(items), "sources": items}
 
     def chunk_detail(self, chunk_id: str) -> dict[str, Any]:
         chunk = self.db.get_chunk(chunk_id)
         if not chunk:
             raise ValueError("Metin parçası bulunamadı.")
         chunk["metadata"] = json.loads(chunk.pop("metadata_json"))
+        chunk["tags"] = json.loads(chunk.pop("tags_json"))
         chunk.pop("embedding_json", None)
-        return chunk
+        return self._structured_chunk(chunk)
+
+    def source_status(self, source_id: str) -> dict[str, Any]:
+        source = self.db.get_source(source_id)
+        if not source:
+            raise ValueError("Kaynak bulunamadı.")
+        return {
+            "source_id": source_id,
+            "title": source["title"],
+            "status": source["status"],
+            "current_or_archived": (
+                "current" if source["status"] == "active" else "archive"
+            ),
+            "version": source["version"],
+            "publication_date": source["published_at"],
+            "effective_date": source["effective_from"],
+            "retrieved_at": source["last_checked_at"],
+            "sha256": source["content_sha256"],
+            "supersedes_source_id": source["supersedes_source_id"],
+            "official_url": source["url"],
+        }
+
+    @staticmethod
+    def _source_meta(source: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "source_id": source["id"],
+            "title": source["title"],
+            "institution": source["authority"],
+            "jurisdiction": source["jurisdiction"],
+            "category": source["category"],
+            "subcategory": source["subcategory"],
+            "source_type": source["source_type"],
+            "publication_date": source["published_at"],
+            "effective_date": source["effective_from"],
+            "version": source["version"],
+            "current_or_archived": (
+                "current" if source["status"] == "active" else "archive"
+            ),
+            "tags": source.get("tags", []),
+        }
+
+    @staticmethod
+    def _source_evidence(source: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "official_url": source["url"],
+            "retrieved_at": source["last_checked_at"],
+            "source_status": source["status"],
+            "sha256": source["content_sha256"],
+        }
+
+    def _structured_source(self, source: dict[str, Any]) -> dict[str, Any]:
+        chunks = source.pop("chunks", None)
+        return {
+            "data": {"chunks": chunks} if chunks is not None else {},
+            "meta": self._source_meta(source),
+            "evidence": self._source_evidence(source),
+            "versioning": {
+                "supersedes_source_id": source["supersedes_source_id"],
+                "created_at": source["created_at"],
+                "updated_at": source["updated_at"],
+            },
+        }
+
+    def _structured_chunk(self, chunk: dict[str, Any]) -> dict[str, Any]:
+        source = {
+            "id": chunk["source_id"],
+            "title": chunk["source_title"],
+            "authority": chunk["authority"],
+            "jurisdiction": chunk["jurisdiction"],
+            "category": chunk["category"],
+            "subcategory": chunk["subcategory"],
+            "source_type": chunk["source_type"],
+            "published_at": chunk["published_at"],
+            "effective_from": chunk["effective_from"],
+            "version": chunk["version"],
+            "status": chunk["status"],
+            "tags": chunk["tags"],
+            "url": chunk["url"],
+            "last_checked_at": chunk["last_checked_at"],
+            "content_sha256": chunk["content_sha256"],
+        }
+        return {
+            "data": {
+                "text": chunk["text"],
+                "relevant_section": chunk["heading"],
+                "article_or_chunk": chunk["article_no"] or chunk["id"],
+            },
+            "meta": {**self._source_meta(source), "chunk_id": chunk["id"]},
+            "evidence": self._source_evidence(source),
+        }

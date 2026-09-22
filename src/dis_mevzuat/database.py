@@ -29,6 +29,11 @@ CREATE TABLE IF NOT EXISTS sources (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     last_checked_at TEXT NOT NULL,
+    jurisdiction TEXT NOT NULL DEFAULT 'TR',
+    category TEXT NOT NULL DEFAULT 'healthcare',
+    subcategory TEXT,
+    version TEXT,
+    tags_json TEXT NOT NULL DEFAULT '[]',
     FOREIGN KEY(supersedes_source_id) REFERENCES sources(id)
 );
 
@@ -70,6 +75,11 @@ CREATE TABLE IF NOT EXISTS stages (
     supersedes_source_id TEXT,
     metadata_json TEXT NOT NULL DEFAULT '{}',
     created_at TEXT NOT NULL
+    ,jurisdiction TEXT NOT NULL DEFAULT 'TR'
+    ,category TEXT NOT NULL DEFAULT 'healthcare'
+    ,subcategory TEXT
+    ,version TEXT
+    ,tags_json TEXT NOT NULL DEFAULT '[]'
 );
 
 CREATE INDEX IF NOT EXISTS idx_sources_status ON sources(status);
@@ -84,6 +94,34 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as conn:
             conn.executescript(SCHEMA)
+            self._migrate_metadata_columns(conn)
+
+    @staticmethod
+    def _migrate_metadata_columns(conn: sqlite3.Connection) -> None:
+        """Add general health-tourism metadata without rebuilding existing indexes."""
+        additions = {
+            "sources": {
+                "jurisdiction": "TEXT NOT NULL DEFAULT 'TR'",
+                "category": "TEXT NOT NULL DEFAULT 'healthcare'",
+                "subcategory": "TEXT",
+                "version": "TEXT",
+                "tags_json": "TEXT NOT NULL DEFAULT '[]'",
+            },
+            "stages": {
+                "jurisdiction": "TEXT NOT NULL DEFAULT 'TR'",
+                "category": "TEXT NOT NULL DEFAULT 'healthcare'",
+                "subcategory": "TEXT",
+                "version": "TEXT",
+                "tags_json": "TEXT NOT NULL DEFAULT '[]'",
+            },
+        }
+        for table, columns in additions.items():
+            existing = {
+                row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()
+            }
+            for name, definition in columns.items():
+                if name not in existing:
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {definition}")
 
     @contextmanager
     def connection(self) -> Iterator[sqlite3.Connection]:
@@ -160,7 +198,9 @@ class Database:
             row = conn.execute(
                 """
                 SELECT c.*, s.title AS source_title, s.authority, s.source_type,
-                       s.url, s.published_at, s.status
+                       s.url, s.published_at, s.effective_from, s.status,
+                       s.last_checked_at, s.content_sha256, s.jurisdiction,
+                       s.category, s.subcategory, s.version, s.tags_json
                 FROM chunks c JOIN sources s ON s.id = c.source_id
                 WHERE c.id = ?
                 """,
@@ -220,12 +260,22 @@ class Database:
         params.append(limit)
         sql = f"""
             SELECT c.*, s.title AS source_title, s.authority, s.source_type,
-                   s.published_at, s.status, bm25(chunks_fts) AS rank
+                   s.url, s.published_at, s.effective_from, s.status,
+                   s.last_checked_at, s.content_sha256, s.jurisdiction,
+                   s.category, s.subcategory, s.version, s.tags_json,
+                   bm25(chunks_fts) AS rank
             FROM chunks_fts
             JOIN chunks c ON c.id = chunks_fts.chunk_id
             JOIN sources s ON s.id = c.source_id
             WHERE {' AND '.join(conditions)}
-            ORDER BY rank
+            ORDER BY
+                rank,
+                CASE
+                    WHEN s.authority IN ('Sağlık Bakanlığı', 'Kişisel Verileri Koruma Kurumu', 'Türkiye Cumhuriyeti') THEN 0
+                    WHEN s.authority LIKE '%Ticaret Bakanlığı%' THEN 1
+                    WHEN s.authority LIKE '%Dişhekimleri Birliği%' THEN 2
+                    ELSE 3
+                END
             LIMIT ?
         """
         with self.connection() as conn:
@@ -250,7 +300,9 @@ class Database:
             conditions.append("s.status = 'active'")
         sql = f"""
             SELECT c.*, s.title AS source_title, s.authority, s.source_type,
-                   s.published_at, s.status
+                   s.url, s.published_at, s.effective_from, s.status,
+                   s.last_checked_at, s.content_sha256, s.jurisdiction,
+                   s.category, s.subcategory, s.version, s.tags_json
             FROM chunks c JOIN sources s ON s.id = c.source_id
             WHERE {' AND '.join(conditions)}
         """

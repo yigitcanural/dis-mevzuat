@@ -26,6 +26,23 @@ class Settings:
     transport: str
     host: str
     port: int
+    environment: str = "development"
+    public_base_url: str | None = None
+    max_request_bytes: int = 1_048_576
+    rate_limit_per_minute: int = 60
+    tool_timeout: float = 20.0
+    log_retention_days: int = 0
+    openai_challenge_token: str | None = None
+    allowed_hosts: tuple[str, ...] = ()
+    source_allowed_domains: tuple[str, ...] = (
+        "resmigazete.gov.tr",
+        "saglik.gov.tr",
+        "kvkk.gov.tr",
+        "ushas.com.tr",
+        "healthturkiye.com",
+        "ticaret.gov.tr",
+        "tdb.org.tr",
+    )
 
     @property
     def db_path(self) -> Path:
@@ -55,4 +72,25 @@ class Settings:
             transport=os.getenv("DM_TRANSPORT", "stdio"),
             host=os.getenv("DM_HOST", "127.0.0.1"),
             port=int(os.getenv("DM_PORT", "8000")),
+            environment=os.getenv("DM_ENVIRONMENT", "development"),
+            public_base_url=(os.getenv("DM_PUBLIC_BASE_URL") or "").rstrip("/") or None,
+            max_request_bytes=int(os.getenv("DM_MAX_REQUEST_BYTES", "1048576")),
+            rate_limit_per_minute=int(os.getenv("DM_RATE_LIMIT_PER_MINUTE", "60")),
+            tool_timeout=float(os.getenv("DM_TOOL_TIMEOUT", "20")),
+            log_retention_days=int(os.getenv("DM_LOG_RETENTION_DAYS", "0")),
+            openai_challenge_token=os.getenv("OPENAI_APPS_CHALLENGE_TOKEN") or None,
+            allowed_hosts=tuple(
+                item.strip()
+                for item in os.getenv("DM_ALLOWED_HOSTS", "").split(",")
+                if item.strip()
+            ),
+            source_allowed_domains=tuple(
+                item.strip().lower()
+                for item in os.getenv(
+                    "DM_SOURCE_ALLOWED_DOMAINS",
+                    "resmigazete.gov.tr,saglik.gov.tr,kvkk.gov.tr,ushas.com.tr,"
+                    "healthturkiye.com,ticaret.gov.tr,tdb.org.tr",
+                ).split(",")
+                if item.strip()
+            ),
         )

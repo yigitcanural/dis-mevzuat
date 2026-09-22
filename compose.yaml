@@ -1,28 +1,54 @@
+name: ${COMPOSE_PROJECT_NAME:-health-tourism-regulations}
+
 services:
   dis-mevzuat:
     build:
       context: .
-    container_name: dis-mevzuat
+    image: health-tourism-regulations-mcp:local
+    container_name: health-tourism-regulations-mcp
     restart: unless-stopped
+    init: true
+    user: "${PUID:-1000}:${PGID:-1000}"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     environment:
       DM_DATA_DIR: /app/data
-      DM_ENABLE_ADMIN_TOOLS: "false"
       DM_TRANSPORT: http
       DM_HOST: 0.0.0.0
       DM_PORT: "8000"
+      DM_ENVIRONMENT: production
+      DM_PUBLIC_BASE_URL: ${DM_PUBLIC_BASE_URL:-}
+      DM_ALLOWED_HOSTS: ${DM_ALLOWED_HOSTS:-localhost,127.0.0.1,health-tourism-regulations-mcp}
+      DM_MAX_REQUEST_BYTES: ${DM_MAX_REQUEST_BYTES:-1048576}
+      DM_RATE_LIMIT_PER_MINUTE: ${DM_RATE_LIMIT_PER_MINUTE:-60}
+      DM_TOOL_TIMEOUT: ${DM_TOOL_TIMEOUT:-20}
+      DM_LOG_RETENTION_DAYS: ${DM_LOG_RETENTION_DAYS:-0}
+      DM_SOURCE_ALLOWED_DOMAINS: ${DM_SOURCE_ALLOWED_DOMAINS:-resmigazete.gov.tr,saglik.gov.tr,kvkk.gov.tr,ushas.com.tr,healthturkiye.com,ticaret.gov.tr,tdb.org.tr}
+      OPENAI_APPS_CHALLENGE_TOKEN: ${OPENAI_APPS_CHALLENGE_TOKEN:-}
+      DM_EMBEDDING_API_KEY: ${DM_EMBEDDING_API_KEY:-}
+      DM_EMBEDDING_API_BASE: ${DM_EMBEDDING_API_BASE:-https://openrouter.ai/api/v1}
+      DM_EMBEDDING_MODEL: ${DM_EMBEDDING_MODEL:-openai/text-embedding-3-small}
     ports:
-      # Lokal kurulum: MCP internete değil, yalnızca bu Mac'e açıktır.
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${DM_PORT:-8000}:8000"
     volumes:
-      # Mevzuat indexi container silinse veya güncellense de korunur.
       - ./data:/app/data
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid,nodev
     healthcheck:
       test:
         - CMD
         - python
         - -c
-        - "import socket; s=socket.create_connection(('127.0.0.1', 8000), 2); s.close()"
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"
       interval: 30s
       timeout: 5s
-      retries: 3
-      start_period: 10s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
