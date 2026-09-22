@@ -55,11 +55,12 @@ assets/openai-plugin-logo.png
 **Category**
 
 ```text
-Healthcare
+BUSINESS
 ```
 
-OpenAI'nin resmî desteklenen kategori değerlerinden, sağlık hizmetleri ve sağlık
-turizmi mevzuatı araştırma kapsamıyla en uyumlu olanıdır.
+ChatGPT App Submission import şeması `Healthcare` değeri sunmaz. Şemanın resmî
+enum değerlerinden, sağlık hizmetleri mevzuatı için iş uyumluluğu araştırma
+kapsamıyla en uyumlu olan `BUSINESS` seçilmiştir.
 
 **Short description**
 
