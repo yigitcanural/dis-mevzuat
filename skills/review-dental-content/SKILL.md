@@ -77,7 +77,7 @@ turns a post into advertising.
 
 ## Retrieve evidence from the MCP
 
-1. For an ordinary review, run 2–4 narrow `search_sources` queries derived from the actual risk
+1. For an ordinary review, run 2–4 narrow `search_regulations` queries derived from the actual risk
    subjects and use a small result set such as `top_k=3`. Prefer separate queries such as
    `fiyat indirim kampanya`, `hasta yorumu öncesi sonrası`, or `yurt dışı hedefleme
    HealthTürkiye` over one long generic query.
